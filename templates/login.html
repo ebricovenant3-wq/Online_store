@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Sign in — Runway</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="account-page">
+<header class="site-header account-header"><a href="{{ url_for('home') }}" class="brand" aria-label="Runway home"><img src="https://reel-ref-try-the-look.vercel.app/assets/nike-logo.svg" width="68" height="24" alt="Nike"></a><a href="{{ url_for('home') }}" class="account-link">Back to runway</a></header>
+<main class="auth-wrap"><section class="auth-card"><p class="auth-kicker">YOUR RUNWAY ACCOUNT</p><h1>Welcome back.</h1><p class="auth-intro">Sign in to open your styling dashboard and explore the looks.</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<p class="auth-message {{ category }}" role="alert">{{ message }}</p>{% endfor %}{% endwith %}
+  <form method="post" class="auth-form"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form>
+  <p class="auth-switch">New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+</section></main>
+</body>
+</html>
