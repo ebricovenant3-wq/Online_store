@@ -5,10 +5,25 @@
   const image = dialog.querySelector('[data-detail-image]');
   const colors = dialog.querySelector('[data-detail-colors]');
   const sizes = dialog.querySelector('[data-detail-sizes]');
+  const previewFilters = {
+    'light grey': 'grayscale(.78) brightness(1.12)',
+    grey: 'grayscale(.85) brightness(.92)',
+    'heather grey': 'grayscale(.8) brightness(.9)',
+    cream: 'sepia(.24) saturate(.78) brightness(1.03)',
+    'dark brown': 'sepia(.78) saturate(1.7) brightness(.64)',
+    pink: 'sepia(.42) saturate(2.4) hue-rotate(292deg) brightness(1.03)',
+    black: 'grayscale(1) brightness(.48) contrast(1.18)',
+    white: 'grayscale(1) brightness(1.24)',
+    beige: 'sepia(.38) saturate(.82) brightness(.91)',
+    charcoal: 'grayscale(1) brightness(.62)',
+    'bottle green': 'sepia(.82) saturate(1.9) hue-rotate(73deg) brightness(.66)',
+    red: 'sepia(1) saturate(2.8) hue-rotate(326deg) brightness(.9)'
+  };
 
   function openDetails(key) {
     const product = products[key];
     if (!product) return;
+    dialog.dataset.productKey = key;
     dialog.querySelector('[data-detail-vendor]').textContent = product.vendor;
     dialog.querySelector('[data-detail-name]').textContent = product.name;
     dialog.querySelector('[data-detail-price]').textContent = `$${Number(product.price).toFixed(2)}`;
@@ -30,10 +45,16 @@
         colors.querySelectorAll('.detail-swatch').forEach(item => item.setAttribute('aria-pressed', 'false'));
         swatch.setAttribute('aria-pressed', 'true');
         dialog.querySelector('[data-detail-color-label]').textContent = color.name;
+        image.style.filter = previewFilters[color.name.toLowerCase()] || '';
+        window.RUNWAY_SELECTED_COLORS ||= {};
+        window.RUNWAY_SELECTED_COLORS[key] = color.hex;
       });
       colors.append(swatch);
     });
     dialog.querySelector('[data-detail-color-label]').textContent = product.colors?.[0]?.name || '';
+    image.style.filter = previewFilters[product.colors?.[0]?.name.toLowerCase()] || '';
+    window.RUNWAY_SELECTED_COLORS ||= {};
+    if (product.colors?.[0]) window.RUNWAY_SELECTED_COLORS[key] = product.colors[0].hex;
     dialog.querySelector('[data-detail-colors-wrap]').hidden = !product.colors?.length;
 
     sizes.replaceChildren();
