@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>YOUR SHOPPING CART</h1>
+    <a href="{{ url_for('home') }}">Continue Shopping</a>
+</header>
+
+<main>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    {% if cart_items %}
+
+        {% for item in cart_items %}
+            <div class="cart-item">
+                <h3>{{ item.name }}</h3>
+
+                <p>Price: ₦{{ "{:,}".format(item.price) }}</p>
+
+                <p>Subtotal: ₦{{ "{:,}".format(item.subtotal) }}</p>
+
+                <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST">
+                    <input
+                        type="number"
+                        name="quantity"
+                        min="1"
+                        max="{{ item.stock }}"
+                        value="{{ item.quantity }}"
+                        required
+                    >
+                    <button type="submit">Update</button>
+                </form>
+
+                <form action="{{ url_for('remove_from_cart', product_id=item.id) }}" method="POST">
+                    <button type="submit" class="remove">Remove</button>
+                </form>
+            </div>
+        {% endfor %}
+
+        <h2>Total: ₦{{ "{:,}".format(total) }}</h2>
+
+        <h3>Customer Checkout</h3>
+
+        <form action="{{ url_for('checkout') }}" method="POST">
+            <input
+                type="text"
+                name="customer_name"
+                placeholder="Enter your name"
+                required
+            >
+
+            <button type="submit">Place Order</button>
+        </form>
+
+    {% else %}
+
+        <h2>Your cart is empty.</h2>
+        <a href="{{ url_for('home') }}">Shop Now</a>
+
+    {% endif %}
+
+</main>
+
+</body>
+</html>

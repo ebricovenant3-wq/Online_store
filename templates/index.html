@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Six looks, styled head to toe. Explore the runway, isolate a look, and tap a pin to see the piece.">
+    <title>Try the Look — Runway</title>
+    <link rel="preload" as="image" href="https://reel-ref-try-the-look.vercel.app/assets/model-1-640.webp" fetchpriority="high">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>window.RUNWAY_CATALOG = {{ runway_catalog|tojson }};</script>
+    <script defer src="{{ url_for('static', filename='runway.js') }}"></script>
+</head>
+<body>
+<header class="site-header shopify-section-group-header-group">
+    <a href="./" class="brand" aria-label="Runway home"><img src="https://reel-ref-try-the-look.vercel.app/assets/nike-logo.svg" width="68" height="24" alt="Nike"></a>
+    <nav aria-label="Main navigation">
+        <a href="./">Home</a>
+        <a href="https://nike-makknzjs.myshopify.com/pages/nike-orbit" target="_blank" rel="noopener noreferrer">Nike Orbit</a>
+        <a href="https://nike-makknzjs.myshopify.com/pages/scene-rail" target="_blank" rel="noopener noreferrer">Hand Rail Pro</a>
+        <a href="./" aria-current="page">Runway</a>
+    </nav>
+    <button id="open-bag" aria-label="Open styling bag"><svg width="22" height="24" viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M4 8h16l1 16H3L4 8zM8 8V6a4 4 0 0 1 8 0v2"/></svg><span data-cart-count>0</span></button>
+</header>
+<main>
+<runway-section id="Runway-template--28035983671601__the_runway_wdM8BG" class="rw rw--add-icon rw--popup rw--list has-dividers has-border"
+ data-feel="balanced" data-blur="true" data-mblur="true" data-style="ring" data-mstyle="classic" data-fit="true" data-height-mode="original" data-height-vh="100" data-mheight-mode="custom" data-mheight-vh="109" data-reflect="false" data-autoplay="true" data-speed="5000" data-after-add="stay" data-bundle-code="" data-msg-choose="Pick a size for: [items]" data-msg-error="Couldn’t add to bag. Please try again." data-msg-soldout="Sold out">
+    <div class="rw__grid">
+        <section class="rw__left">
+            <div class="rw__head"><div class="rw__intro"><h1 class="rw__title">Try the Look.</h1><p class="rw__sub">Six looks, styled head to toe. Tap a pin to see the piece.</p></div><span class="rw__sr" aria-live="polite" aria-atomic="true" data-rw-live></span></div>
+            <div class="rw__stage" data-rw-stage tabindex="0" role="region" aria-roledescription="carousel" aria-label="Try the Look. — use arrow keys or swipe to change look">
+                <div class="rw__actors" data-rw-actors></div><div class="rw__heroes" data-rw-heroes></div>
+                <span class="rw__cursor" data-rw-cursor><span class="rw__cursor-in"><span class="rw__cursor-label rw__cursor-drag">Drag</span><span class="rw__cursor-label rw__cursor-view">View</span></span></span>
+                <span class="rw__walk"><span class="rw__walk-line"></span></span>
+            </div>
+            <div class="rw__controls">
+                <button class="rw__icon" data-rw-prev aria-label="Previous look"><svg width="26" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M25 7H1M7 1L1 7l6 6"/></svg></button>
+                <div class="rw__ticks" data-rw-ticks></div>
+                <button class="rw__icon rw__auto" data-rw-auto aria-pressed="false" aria-label="Autoplay"><svg class="play" width="14" height="14" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></svg><svg class="pause" width="14" height="14" viewBox="0 0 24 24"><path d="M6.5 4.5h3.5v15H6.5zM14 4.5h3.5v15H14z"/></svg></button>
+                <button class="rw__icon" data-rw-next aria-label="Next look"><svg width="26" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h24M19 1l6 6-6 6"/></svg></button>
+            </div>
+            <div class="rw__lb" data-rw-lb data-word="Look" role="region" aria-label="View look" aria-hidden="true" hidden>
+                <div class="rw__lb-stage" data-rw-lb-stage></div>
+                <div class="rw__lb-top"><p class="rw__lb-cap"><span class="rw__lb-kicker" data-rw-lb-kicker></span><span class="rw__lb-name" data-rw-lb-name></span></p><button class="rw__lb-close" data-rw-zoom-close aria-label="Close">×</button></div>
+                <p class="rw__lb-hint">Tap a dot to shop the piece</p>
+            </div>
+        </section>
+        <aside class="rw__panel"><div class="rw__panel-inner"><div class="rw__panel-head"><h2 class="rw__panel-title">In this look</h2><span class="rw__label" data-rw-pieces>3 pieces</span></div><div data-rw-panels></div></div></aside>
+    </div>
+</runway-section>
+</main>
+<dialog id="bag-dialog"><div class="bag-heading"><h2>Your styling bag</h2><button id="close-bag" aria-label="Close styling bag">×</button></div><p class="bag-note">A local outfit shortlist. No payment or order is collected here. Open a piece on the original demo to continue.</p><div id="bag-items"></div><p id="bag-total"></p><button id="export-bag">Download outfit shortlist</button></dialog>
+<dialog id="product-3d-dialog" class="product-3d-dialog" aria-labelledby="product-3d-title"><div class="bag-heading"><div><p class="viewer-kicker">INTERACTIVE PRODUCT VIEW</p><h2 id="product-3d-title">3D clothing preview</h2></div><button id="close-3d" aria-label="Close 3D preview">×</button></div><p class="viewer-note">Drag to turn the garment. Use the controls for a full rotation.</p><div class="viewer-scene" data-viewer-scene><div class="garment-3d" data-garment-3d></div></div><div class="viewer-controls"><button type="button" data-rotate="-45" aria-label="Rotate left">↶</button><button type="button" data-spin aria-pressed="false">Auto rotate</button><button type="button" data-rotate="45" aria-label="Rotate right">↷</button></div></dialog>
+<div id="bag-status" role="status" aria-live="polite"></div>
+</body>
+</html>

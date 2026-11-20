@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Successful</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<main class="success">
+    <h1>Order Successful!</h1>
+
+    <p>Thank you, {{ customer_name }}.</p>
+
+    <p>Your order has been saved.</p>
+
+    <h2>Order Number: #{{ order_id }}</h2>
+
+    <h2>Total: ₦{{ "{:,}".format(total) }}</h2>
+
+    <a href="{{ url_for('home') }}">Return to Store</a>
+</main>
+
+</body>
+</html>
