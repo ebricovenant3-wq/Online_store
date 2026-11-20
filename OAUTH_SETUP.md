@@ -8,6 +8,8 @@ Configure these environment variables locally in a `.env` file (which is ignored
 - X: `X_CLIENT_ID`, `X_CLIENT_SECRET`
 - Apple: `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`
 
+For the deployed Google and X buttons, create OAuth clients with Google Cloud and X Developer Console, then add the corresponding client ID and secret in the Render service's **Environment** settings. The Render Blueprint declares these four values as unsynced secrets so they are not stored in this repository. Save the values and redeploy the service; the buttons become active when both values for a provider are present.
+
 Register the matching callback URL with each provider. Replace `<your-render-host>` with the service hostname Render assigns:
 
 - `https://<your-render-host>/auth/google/callback`
