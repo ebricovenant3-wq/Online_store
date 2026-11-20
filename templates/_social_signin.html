@@ -1,0 +1,14 @@
+<div class="social-signin">
+  <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
+  <div class="social-buttons">
+    {% for provider in social_providers %}
+      {% if provider.enabled %}<a class="social-button social-{{ provider.key }}" href="{{ url_for('social_login', provider=provider.key) }}">
+      {% else %}<button class="social-button social-{{ provider.key }} is-unavailable" type="button" disabled title="Add {{ provider.label }} OAuth credentials to enable">
+      {% endif %}
+        {% if provider.key == 'google' %}<span class="social-mark google-mark" aria-hidden="true">G</span>{% elif provider.key == 'apple' %}<span class="social-mark apple-mark" aria-hidden="true">●</span>{% else %}<span class="social-mark x-mark" aria-hidden="true">𝕏</span>{% endif %}
+        <span>Continue with {{ provider.label }}</span>
+      {% if provider.enabled %}</a>{% else %}</button>{% endif %}
+    {% endfor %}
+  </div>
+  {% if social_providers|selectattr('enabled')|list|length < 3 %}<p class="social-setup-note">Add provider credentials in the app environment to enable the unavailable sign-in options.</p>{% endif %}
+</div>

@@ -1,14 +1,62 @@
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from authlib.integrations.flask_client import OAuth
 import sqlite3
 from pathlib import Path
 import json
 import os
 from functools import wraps
+from dotenv import load_dotenv
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "local-dev-secret-key")
+is_production = os.environ.get("APP_ENV") == "production" or bool(os.environ.get("RENDER"))
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=is_production,
+    SESSION_COOKIE_SAMESITE="None" if is_production else "Lax",
+)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+oauth = OAuth(app)
+OAUTH_LABELS = {"google": "Google", "x": "X", "apple": "Apple"}
+
+if os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"):
+    oauth.register(
+        name="google",
+        client_id=os.environ["GOOGLE_CLIENT_ID"],
+        client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
+
+if os.environ.get("X_CLIENT_ID") and os.environ.get("X_CLIENT_SECRET"):
+    oauth.register(
+        name="x",
+        client_id=os.environ["X_CLIENT_ID"],
+        client_secret=os.environ["X_CLIENT_SECRET"],
+        authorize_url="https://x.com/i/oauth2/authorize",
+        access_token_url="https://api.x.com/2/oauth2/token",
+        api_base_url="https://api.x.com/",
+        client_kwargs={
+            "scope": "users.read",
+            "code_challenge_method": "S256",
+            "token_endpoint_auth_method": "client_secret_basic",
+        },
+    )
+
+if os.environ.get("APPLE_CLIENT_ID") and os.environ.get("APPLE_CLIENT_SECRET"):
+    oauth.register(
+        name="apple",
+        client_id=os.environ["APPLE_CLIENT_ID"],
+        client_secret=os.environ["APPLE_CLIENT_SECRET"],
+        server_metadata_url="https://appleid.apple.com/.well-known/openid-configuration",
+        token_endpoint_auth_method="client_secret_post",
+        client_kwargs={"scope": "openid email name"},
+    )
 
 DATABASE = Path(__file__).resolve().with_name("store.db")
 
@@ -99,6 +147,16 @@ def initialize_database():
             email TEXT NOT NULL UNIQUE COLLATE NOCASE,
             password_hash TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS social_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            provider TEXT NOT NULL,
+            provider_subject TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (provider, provider_subject),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
     """)
 
@@ -245,6 +303,53 @@ def login_required(view):
     return wrapped_view
 
 
+def configured_social_providers():
+    return [
+        {"key": key, "label": label, "enabled": oauth.create_client(key) is not None}
+        for key, label in OAUTH_LABELS.items()
+    ]
+
+
+def safe_internal_next(value):
+    return value if value and value.startswith("/") and not value.startswith("//") else url_for("dashboard")
+
+
+def social_user(provider, subject, name, email=None, email_verified=False):
+    connection = get_db()
+    identity = connection.execute(
+        "SELECT users.id, users.name FROM social_accounts JOIN users ON users.id = social_accounts.user_id WHERE provider = ? AND provider_subject = ?",
+        (provider, str(subject)),
+    ).fetchone()
+    if identity:
+        connection.close()
+        return identity
+
+    normalized_email = email.strip().lower() if email and email_verified else None
+    user = None
+    if normalized_email:
+        user = connection.execute(
+            "SELECT id, name FROM users WHERE email = ? COLLATE NOCASE",
+            (normalized_email,),
+        ).fetchone()
+
+    if not user:
+        account_email = normalized_email or f"{provider}-{subject}@social.runway.invalid"
+        display_name = (name or "").strip() or f"{OAUTH_LABELS[provider]} user"
+        cursor = connection.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            (display_name, account_email, generate_password_hash(os.urandom(32).hex())),
+        )
+        user = {"id": cursor.lastrowid, "name": display_name}
+
+    connection.execute(
+        "INSERT INTO social_accounts (user_id, provider, provider_subject) VALUES (?, ?, ?)",
+        (user["id"], provider, str(subject)),
+    )
+    connection.commit()
+    connection.close()
+    return user
+
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -253,7 +358,10 @@ def signup():
         password = request.form.get("password", "")
         if not name or not email or len(password) < 8:
             flash("Enter your name and email, and use a password with at least 8 characters.", "error")
-            return render_template("signup.html", name=name, email=email)
+            return render_template(
+                "signup.html", name=name, email=email,
+                social_providers=configured_social_providers(),
+            )
 
         connection = get_db()
         try:
@@ -270,7 +378,10 @@ def signup():
             flash("An account with this email already exists. Sign in instead.", "error")
         finally:
             connection.close()
-    return render_template("signup.html", name="", email="")
+    return render_template(
+        "signup.html", name="", email="",
+        social_providers=configured_social_providers(),
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -294,7 +405,73 @@ def login():
                 return redirect(next_page)
             return redirect(url_for("dashboard"))
         flash("That email and password combination was not recognized.", "error")
-    return render_template("login.html")
+    return render_template("login.html", social_providers=configured_social_providers())
+
+
+@app.route("/auth/<provider>")
+def social_login(provider):
+    if provider not in OAUTH_LABELS:
+        return redirect(url_for("login"))
+    client = oauth.create_client(provider)
+    if client is None:
+        flash(f"{OAUTH_LABELS[provider]} sign-in needs to be configured first.", "error")
+        return redirect(url_for("login"))
+    session["social_next"] = safe_internal_next(request.args.get("next"))
+    callback_url = url_for("social_callback", provider=provider, _external=True)
+    if provider == "apple":
+        return client.authorize_redirect(callback_url, response_mode="form_post")
+    return client.authorize_redirect(callback_url)
+
+
+@app.route("/auth/<provider>/callback", methods=["GET", "POST"])
+def social_callback(provider):
+    if provider not in OAUTH_LABELS:
+        return redirect(url_for("login"))
+    client = oauth.create_client(provider)
+    if client is None:
+        flash(f"{OAUTH_LABELS[provider]} sign-in needs to be configured first.", "error")
+        return redirect(url_for("login"))
+
+    try:
+        token = client.authorize_access_token()
+        apple_user = {}
+        if provider == "x":
+            response = client.get("2/users/me", params={"user.fields": "name,username"})
+            response.raise_for_status()
+            profile = response.json().get("data", {})
+            subject = profile.get("id")
+            name = profile.get("name") or profile.get("username")
+        else:
+            profile = dict(token.get("userinfo") or {})
+            subject = profile.get("sub")
+            name = profile.get("name")
+            if provider == "apple":
+                try:
+                    apple_user = json.loads(request.values.get("user", "{}"))
+                except (TypeError, json.JSONDecodeError):
+                    apple_user = {}
+                apple_name = apple_user.get("name") or {}
+                name = name or " ".join(
+                    value for value in (apple_name.get("firstName"), apple_name.get("lastName")) if value
+                )
+            profile["name"] = name
+
+        email = profile.get("email") or apple_user.get("email")
+        verified_value = profile.get("email_verified", apple_user.get("email_verified", False))
+        email_verified = verified_value is True or str(verified_value).lower() in {"true", "1", "yes"}
+        if not subject:
+            raise ValueError("The identity provider did not return an account identifier.")
+        user = social_user(provider, subject, name, email, email_verified)
+        destination = safe_internal_next(session.pop("social_next", None))
+        session.clear()
+        session["user_id"] = user["id"]
+        session["user_name"] = user["name"]
+        return redirect(destination)
+    except Exception:
+        app.logger.exception("Social sign-in failed for provider %s", provider)
+        session.pop("social_next", None)
+        flash(f"Could not sign in with {OAUTH_LABELS[provider]}. Please try again.", "error")
+        return redirect(url_for("login"))
 
 
 @app.post("/logout")
