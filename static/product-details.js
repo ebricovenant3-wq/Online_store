@@ -20,6 +20,32 @@
     red: 'sepia(1) saturate(2.8) hue-rotate(326deg) brightness(.9)'
   };
 
+  try {
+    window.RUNWAY_SELECTED_COLORS = JSON.parse(localStorage.getItem('runway-product-colors-v1') || '{}');
+  } catch {
+    window.RUNWAY_SELECTED_COLORS = {};
+  }
+
+  function applyProductColor(key, color) {
+    if (!color) return;
+    window.RUNWAY_SELECTED_COLORS[key] = color.hex;
+    try {
+      localStorage.setItem('runway-product-colors-v1', JSON.stringify(window.RUNWAY_SELECTED_COLORS));
+    } catch {}
+    const filter = previewFilters[color.name.toLowerCase()] || '';
+    image.style.filter = filter;
+    document.querySelectorAll(`[data-product="${key}"] .rw__media img, [data-product-detail="${key}"] img`).forEach(item => {
+      item.style.filter = filter;
+      item.dataset.previewColor = color.name;
+    });
+  }
+
+  Object.entries(window.RUNWAY_SELECTED_COLORS).forEach(([key, hex]) => {
+    const product = products[key];
+    const color = product?.colors?.find(option => option.hex === hex);
+    if (color) applyProductColor(key, color);
+  });
+
   function openDetails(key) {
     const product = products[key];
     if (!product) return;
@@ -33,28 +59,26 @@
     dialog.querySelector('[data-detail-link]').href = product.url;
 
     colors.replaceChildren();
-    (product.colors || []).forEach((color, index) => {
+    const selectedColor = product.colors?.find(color => color.hex === window.RUNWAY_SELECTED_COLORS[key]) || product.colors?.[0];
+    (product.colors || []).forEach(color => {
+      const index = product.colors.indexOf(color);
       const swatch = document.createElement('button');
       swatch.type = 'button';
       swatch.className = 'detail-swatch';
       swatch.style.setProperty('--swatch', color.hex);
       swatch.setAttribute('aria-label', color.name);
-      swatch.setAttribute('aria-pressed', String(index === 0));
+      swatch.setAttribute('aria-pressed', String(color === selectedColor));
       swatch.title = color.name;
       swatch.addEventListener('click', () => {
         colors.querySelectorAll('.detail-swatch').forEach(item => item.setAttribute('aria-pressed', 'false'));
         swatch.setAttribute('aria-pressed', 'true');
         dialog.querySelector('[data-detail-color-label]').textContent = color.name;
-        image.style.filter = previewFilters[color.name.toLowerCase()] || '';
-        window.RUNWAY_SELECTED_COLORS ||= {};
-        window.RUNWAY_SELECTED_COLORS[key] = color.hex;
+        applyProductColor(key, color);
       });
       colors.append(swatch);
     });
-    dialog.querySelector('[data-detail-color-label]').textContent = product.colors?.[0]?.name || '';
-    image.style.filter = previewFilters[product.colors?.[0]?.name.toLowerCase()] || '';
-    window.RUNWAY_SELECTED_COLORS ||= {};
-    if (product.colors?.[0]) window.RUNWAY_SELECTED_COLORS[key] = product.colors[0].hex;
+    dialog.querySelector('[data-detail-color-label]').textContent = selectedColor?.name || '';
+    if (selectedColor) applyProductColor(key, selectedColor);
     dialog.querySelector('[data-detail-colors-wrap]').hidden = !product.colors?.length;
 
     sizes.replaceChildren();

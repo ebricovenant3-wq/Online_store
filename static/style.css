@@ -28,3 +28,4 @@
 @media(max-width:600px){.product-detail-dialog{max-height:90dvh}.detail-layout{grid-template-columns:1fr;min-height:0}.detail-image-wrap{min-height:250px;height:35vh;padding:20px}.detail-image-wrap img{height:100%;max-height:300px}.detail-copy{padding:25px 22px 24px}.detail-copy h2{font-size:26px}.detail-description{margin:13px 0}.detail-close{top:10px;right:10px}}
 .rw__media{padding:0;border:0;text-align:initial;cursor:pointer}
 .detail-image-wrap img{transition:filter .45s var(--ease),transform .45s var(--ease)}.detail-swatch:hover{transform:scale(1.12)}
+.rw__media img,.dashboard-product img{transition:filter .45s var(--ease),transform 1s var(--ease)}
