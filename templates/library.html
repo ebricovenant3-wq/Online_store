@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f4f1">
+  <meta name="description" content="Explore the Runway library: curated outfits and every piece in the collection.">
+  <title>Explore the Library — Runway</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>window.RUNWAY_CATALOG = {{ runway_catalog|tojson }};</script>
+  <script defer src="{{ url_for('static', filename='product-details.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='library.js') }}"></script>
+</head>
+<body class="library-page">
+<header class="site-header library-header">
+  <a href="{{ url_for('home') }}" class="brand" aria-label="Runway home"><img src="https://reel-ref-try-the-look.vercel.app/assets/nike-logo.svg" width="68" height="24" alt="Nike"></a>
+  <nav aria-label="Main navigation"><a href="{{ url_for('home') }}">Runway</a><a href="{{ url_for('library') }}" aria-current="page">Library</a></nav>
+  {% if session.get('user_id') %}<a class="account-link" href="{{ url_for('dashboard') }}">Dashboard</a>{% else %}<a class="account-link" href="{{ url_for('login') }}">Sign in</a>{% endif %}
+</header>
+<main class="library-wrap">
+  <section class="library-hero">
+    <p class="auth-kicker">RUNWAY / THE LIBRARY</p>
+    <div class="library-hero-row"><h1>Find your<br><em>next look.</em></h1><p>A considered edit of outfits and pieces. Search the collection, follow a mood, and open any item to explore its colors and details.</p></div>
+    <div class="library-search-wrap"><span aria-hidden="true">⌕</span><input id="library-search" type="search" placeholder="Search pieces, colors, or looks" aria-label="Search the library"><kbd>/</kbd></div>
+    <div class="library-toolbar"><div class="library-tabs" role="group" aria-label="Choose what to browse"><button type="button" class="is-active" data-mode="all" aria-pressed="true">Everything</button><button type="button" data-mode="looks" aria-pressed="false">Looks <span>{{ looks|length }}</span></button><button type="button" data-mode="pieces" aria-pressed="false">Pieces <span>{{ products|length }}</span></button></div><label class="library-sort">Sort <select id="library-sort" aria-label="Sort pieces"><option value="featured">Featured</option><option value="name">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label></div>
+  </section>
+  <section class="library-section" data-looks-section>
+    <div class="library-section-head"><div><p class="auth-kicker">CURATED STORIES</p><h2>Looks to live in</h2></div><span>{{ looks|length }} EDITS</span></div>
+    <div class="library-look-grid">
+      {% for look in looks %}<article class="library-look" data-library-look data-search="{{ (look.name ~ ' ' ~ look.description)|lower }}"><a class="library-look-image" href="{{ url_for('home') }}" aria-label="Explore {{ look.name }} on the runway"><img src="{{ look.image }}" alt="Model wearing {{ look.name }}" loading="lazy"><span class="library-look-index">LOOK {{ '%02d'|format(loop.index) }}</span><span class="library-look-arrow" aria-hidden="true">↗</span></a><div class="library-look-copy"><div><h3>{{ look.name }}</h3><p>{{ look.description }}</p></div><span>{{ look.items|length }} PIECES</span></div></article>{% endfor %}
+    </div>
+  </section>
+  <section class="library-section library-pieces-section" data-pieces-section>
+    <div class="library-section-head"><div><p class="auth-kicker">THE EDIT</p><h2>Pieces, up close</h2></div><span id="library-result-count">{{ products|length }} PIECES</span></div>
+    <div class="library-filters" role="group" aria-label="Filter by product type"><button type="button" class="is-active" data-category="all" aria-pressed="true">All pieces</button><button type="button" data-category="tops" aria-pressed="false">Tops</button><button type="button" data-category="footwear" aria-pressed="false">Footwear</button><button type="button" data-category="black" aria-pressed="false">Dark tones</button><button type="button" data-category="light" aria-pressed="false">Light tones</button></div>
+    <div class="library-product-grid" id="library-products">
+      {% for product in products %}<article class="library-product" data-library-product data-key="{{ product.key }}" data-category="{% if product.legend == 'Shoe size' %}footwear{% else %}tops{% endif %}" data-colors="{{ product.colors|map(attribute='name')|join(' ')|lower }}" data-price="{{ product.price }}" data-name="{{ product.name|lower }}" data-search="{{ (product.name ~ ' ' ~ product.vendor ~ ' ' ~ product.description ~ ' ' ~ product.colors|map(attribute='name')|join(' '))|lower }}"><button class="library-product-image" type="button" data-product-detail="{{ product.key }}" aria-label="View details for {{ product.name }}"><img src="{{ product.image }}" alt="{{ product.name }}" loading="lazy"><span class="library-quick-view">Quick view ↗</span></button><div class="library-product-copy"><div><p>{{ product.vendor }}</p><h3><button type="button" data-product-detail="{{ product.key }}">{{ product.name }}</button></h3></div><span>${{ '%.2f'|format(product.price) }}</span></div><div class="library-product-swatches" aria-label="Available colors">{% for color in product.colors %}<span title="{{ color.name }}" style="--swatch:{{ color.hex }}"></span>{% endfor %}</div></article>{% endfor %}
+    </div>
+    <p id="library-empty" class="library-empty" hidden>No pieces match that search. Try another word or filter.</p>
+  </section>
+  <section class="library-endnote"><p>THE COLLECTION, IN YOUR OWN LIGHT.</p><a href="{{ url_for('home') }}">Step onto the runway <span aria-hidden="true">↗</span></a></section>
+</main>
+{% include '_product_detail_dialog.html' %}
+</body>
+</html>

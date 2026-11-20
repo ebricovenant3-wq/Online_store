@@ -294,6 +294,13 @@ def home():
     return render_template("index.html", runway_catalog=get_runway_catalog())
 
 
+@app.route("/library")
+def library():
+    catalog = get_runway_catalog()
+    products = [dict(product, key=key) for key, product in catalog["products"].items()]
+    return render_template("library.html", runway_catalog=catalog, products=products, looks=catalog["looks"])
+
+
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
